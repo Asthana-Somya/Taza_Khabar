@@ -1,4 +1,5 @@
 // No API key needed!
+
 const RSS_URL = "https://api.rss2json.com/v1/api.json?rss_url=";
 const GOOGLE_NEWS = "https://news.google.com/rss/search?q=";
 
