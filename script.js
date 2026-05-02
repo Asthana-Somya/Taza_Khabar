@@ -1,21 +1,17 @@
-// No API key needed!
-const RSS_URL = "https://api.rss2json.com/v1/api.json?rss_url=";
-const GOOGLE_NEWS = "https://news.google.com/rss/search?q=";
+const API_KEY = "5a9623e86284128d48d6e9e059ee361d";
+const BASE_URL = `http://api.mediastack.com/v1/news?access_key=${API_KEY}&countries=in&languages=en&limit=12`;
 
 window.addEventListener('load', () => fetchNews("India"));
 
-function reload() {
-    window.location.reload();
-}
+function reload() { window.location.reload(); }
 
 async function fetchNews(query) {
     try {
         showLoader(true);
-        const rssUrl = `${GOOGLE_NEWS}${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en`;
-        const res = await fetch(`${RSS_URL}${encodeURIComponent(rssUrl)}`);
+        const res = await fetch(`${BASE_URL}&keywords=${encodeURIComponent(query)}`);
         const data = await res.json();
-        if (data.items && data.items.length > 0) {
-            bindData(data.items);
+        if (data.data && data.data.length > 0) {
+            bindData(data.data);
         } else {
             showError("No articles found.");
         }
@@ -31,7 +27,6 @@ function bindData(articles) {
     const cardscontainer = document.getElementById('card-container');
     const newsCardTemplate = document.getElementById('template-news-card');
     cardscontainer.innerHTML = "";
-
     articles.forEach(article => {
         const cardClone = newsCardTemplate.content.cloneNode(true);
         fillDataInCard(cardClone, article);
@@ -45,30 +40,25 @@ function fillDataInCard(cardClone, article) {
     const newsSource = cardClone.querySelector('#news-source');
     const newsDesc = cardClone.querySelector('#news-desc');
 
-    // Google RSS thumbnail or fallback
-  // Replace this section at top of fillDataInCard:
-const imgFromDesc = article.description?.match(/<img[^>]+src="([^">]+)"/)?.[1];
-const imgFromThumb = article.thumbnail || article.enclosure?.link;
-const finalImg = imgFromThumb || imgFromDesc;
-
-newsImg.src = finalImg || "https://via.placeholder.com/400x200?text=No+Image";
-newsImg.onerror = () => {
-    newsImg.src = "https://via.placeholder.com/400x200?text=No+Image";
-};
+    newsImg.src = article.image || 
+        `https://source.unsplash.com/400x200/?news,${encodeURIComponent(article.category || 'india')}`;
+    newsImg.onerror = () => {
+        newsImg.src = `https://source.unsplash.com/400x200/?newspaper`;
+    };
 
     newsTitle.innerHTML = article.title;
     newsDesc.innerHTML = article.description
-        ? article.description.replace(/<[^>]+>/g, '').substring(0, 150) + '...'
+        ? article.description.substring(0, 150) + '...'
         : 'Click to read more...';
 
-    const date = new Date(article.pubDate).toLocaleString("en-US", {
+    const date = new Date(article.published_at).toLocaleString("en-US", {
         timeZone: "Asia/Kolkata"
     });
 
-    newsSource.innerHTML = `${article.author || article.source || 'News'} · ${date}`;
+    newsSource.innerHTML = `${article.source || 'News'} · ${date}`;
 
     cardClone.firstElementChild.addEventListener("click", () => {
-        window.open(article.link, "_blank");
+        window.open(article.url, "_blank");
     });
 }
 
