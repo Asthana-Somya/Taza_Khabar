@@ -46,12 +46,15 @@ function fillDataInCard(cardClone, article) {
     const newsDesc = cardClone.querySelector('#news-desc');
 
     // Google RSS thumbnail or fallback
-    newsImg.src = article.thumbnail || 
-                  article.enclosure?.link || 
-                  `https://picsum.photos/seed/${Math.random()}/400/200`;
-    newsImg.onerror = () => {
-        newsImg.src = `https://picsum.photos/seed/${article.title}/400/200`;
-    };
+  // Replace this section at top of fillDataInCard:
+const imgFromDesc = article.description?.match(/<img[^>]+src="([^">]+)"/)?.[1];
+const imgFromThumb = article.thumbnail || article.enclosure?.link;
+const finalImg = imgFromThumb || imgFromDesc;
+
+newsImg.src = finalImg || "https://via.placeholder.com/400x200?text=No+Image";
+newsImg.onerror = () => {
+    newsImg.src = "https://via.placeholder.com/400x200?text=No+Image";
+};
 
     newsTitle.innerHTML = article.title;
     newsDesc.innerHTML = article.description
