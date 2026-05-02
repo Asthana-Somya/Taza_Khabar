@@ -1,17 +1,21 @@
-const API_KEY = "1cc19917-bf9f-4201-b3f3-926f50782a60";
-const BASE_URL = `https://content.guardianapis.com/search?api-key=${API_KEY}&show-fields=thumbnail,trailText,headline&page-size=12&q=`;
+// No API key needed!
+const RSS_URL = "https://api.rss2json.com/v1/api.json?rss_url=";
+const GOOGLE_NEWS = "https://news.google.com/rss/search?q=";
 
 window.addEventListener('load', () => fetchNews("India"));
 
-function reload() { window.location.reload(); }
+function reload() {
+    window.location.reload();
+}
 
 async function fetchNews(query) {
     try {
         showLoader(true);
-        const res = await fetch(`${BASE_URL}${encodeURIComponent(query)}`);
+        const rssUrl = `${GOOGLE_NEWS}${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en`;
+        const res = await fetch(`${RSS_URL}${encodeURIComponent(rssUrl)}`);
         const data = await res.json();
-        if (data.response?.results?.length > 0) {
-            bindData(data.response.results);
+        if (data.items && data.items.length > 0) {
+            bindData(data.items);
         } else {
             showError("No articles found.");
         }
@@ -27,8 +31,8 @@ function bindData(articles) {
     const cardscontainer = document.getElementById('card-container');
     const newsCardTemplate = document.getElementById('template-news-card');
     cardscontainer.innerHTML = "";
+
     articles.forEach(article => {
-        if (!article.fields?.thumbnail) return;
         const cardClone = newsCardTemplate.content.cloneNode(true);
         fillDataInCard(cardClone, article);
         cardscontainer.appendChild(cardClone);
@@ -41,22 +45,27 @@ function fillDataInCard(cardClone, article) {
     const newsSource = cardClone.querySelector('#news-source');
     const newsDesc = cardClone.querySelector('#news-desc');
 
-    newsImg.src = article.fields?.thumbnail;
+    // Google RSS thumbnail or fallback
+    newsImg.src = article.thumbnail || 
+                  article.enclosure?.link || 
+                  `https://picsum.photos/seed/${Math.random()}/400/200`;
     newsImg.onerror = () => {
-        newsImg.src = "https://via.placeholder.com/400x200?text=No+Image";
+        newsImg.src = `https://picsum.photos/seed/${article.title}/400/200`;
     };
 
-    newsTitle.innerHTML = article.fields?.headline || article.webTitle;
-    newsDesc.innerHTML = article.fields?.trailText || 'Click to read more...';
+    newsTitle.innerHTML = article.title;
+    newsDesc.innerHTML = article.description
+        ? article.description.replace(/<[^>]+>/g, '').substring(0, 150) + '...'
+        : 'Click to read more...';
 
-    const date = new Date(article.webPublicationDate).toLocaleString("en-US", {
+    const date = new Date(article.pubDate).toLocaleString("en-US", {
         timeZone: "Asia/Kolkata"
     });
 
-    newsSource.innerHTML = `The Guardian · ${date}`;
+    newsSource.innerHTML = `${article.author || article.source || 'News'} · ${date}`;
 
     cardClone.firstElementChild.addEventListener("click", () => {
-        window.open(article.webUrl, "_blank");
+        window.open(article.link, "_blank");
     });
 }
 
